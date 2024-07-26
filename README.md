@@ -17,7 +17,7 @@ Nexus Chat is a real-time chat application designed to connect, collaborate, and
 
 ### Frontend
 
-- **Next.js**: A React framework for server-side rendering and static site generation.
+- **Next.js**: A React framework for server-side rendering and static site generation.g
 - **Zustand**: A small, fast, and scalable bearbones state-management solution.
 - **shadcn/ui**: A collection of UI components built with Tailwind CSS.
 - **React Query**: Data-fetching library for React to manage server state.
