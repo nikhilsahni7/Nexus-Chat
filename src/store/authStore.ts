@@ -1,16 +1,6 @@
-// src/store/authStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  bio?: string;
-  profileImage?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { User } from "@/../types";
 
 interface AuthState {
   user: User | null;

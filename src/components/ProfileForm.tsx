@@ -26,7 +26,9 @@ interface Profile {
 
 export default function ProfileForm() {
   const router = useRouter();
+
   const { user, setUser, logout } = useAuthStore();
+
   const [username, setUsername] = useState(user?.username || "");
   const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(user?.bio || "");

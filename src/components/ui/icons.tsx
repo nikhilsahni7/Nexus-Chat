@@ -23,6 +23,9 @@ import {
   Globe,
   Mail,
   FileText,
+  Plus,
+  Send,
+  X,
 } from "lucide-react";
 
 export const Icons = {
@@ -49,4 +52,7 @@ export const Icons = {
   globe: Globe,
   mail: Mail,
   fileText: FileText,
+  plus: Plus,
+  send: Send,
+  x: X,
 };
