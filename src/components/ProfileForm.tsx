@@ -1,9 +1,10 @@
 // components/ProfileForm.tsx
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, useUser } from "@/store/authStore";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +27,8 @@ interface Profile {
 
 export default function ProfileForm() {
   const router = useRouter();
-
-  const { user, setUser, logout } = useAuthStore();
+  const { logout, setUser } = useAuthStore();
+  const user = useUser();
 
   const [username, setUsername] = useState(user?.username || "");
   const [email, setEmail] = useState(user?.email || "");

@@ -1,4 +1,6 @@
-"use client";
+ "use client";
+
+ // older version 
 
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Icons } from "@/components/ui/icons";
 import api from "@/lib/api";
-import { Message, User, Conversation } from "@/../types";
+import { Message, User, Conversation, Participant } from "@/../types";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
@@ -35,6 +37,7 @@ export function ChatWindow({
   conversation,
 }: ChatWindowProps) {
   const { user } = useAuthStore();
+
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -74,8 +77,15 @@ export function ChatWindow({
       setFile(null);
       setReplyingTo(null);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error("Error sending message:", error);
+
+      <div>
+        <div className="flex items-center justify-center h-full">
+          <Icons.loader2 className="h-8 w-8 animate-spin" />
+          {error.message} - {error.name}
+        </div>
+      </div>;
     },
   });
 
@@ -171,6 +181,7 @@ export function ChatWindow({
       queryClient.invalidateQueries(["messages", conversationId] as any);
     });
   };
+
   const handleDeleteMessage = (messageId: number) => {
     api.delete(`/messages/${messageId}`).then(() => {
       queryClient.invalidateQueries(["messages", conversationId] as any);
@@ -214,14 +225,14 @@ export function ChatWindow({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Icons.loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Icons.loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <Card className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-lg overflow-hidden">
-      <div className="p-4 bg-gradient-to-r from-primary to-primary-dark text-white flex items-center justify-between">
+    <Card className="flex flex-col h-full bg-gray-100 shadow-lg rounded-lg overflow-hidden">
+      <div className="p-4 bg-black text-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {conversation.isGroup ? (
             <Icons.users className="h-6 w-6" />
@@ -236,7 +247,7 @@ export function ChatWindow({
           }}
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-primary-dark"
+          className="text-white hover:bg-gray-800"
         >
           <Icons.settings className="h-5 w-5" />
         </Button>
@@ -266,7 +277,7 @@ export function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
       {typingUsers.length > 0 && (
-        <div className="px-4 py-2 text-sm text-gray-600 bg-gray-100 animate-pulse">
+        <div className="px-4 py-2 text-sm text-gray-500 bg-gray-100 animate-pulse">
           {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"}{" "}
           typing...
         </div>
@@ -283,7 +294,7 @@ export function ChatWindow({
           </Button>
         </div>
       )}
-      <div className="p-4 bg-white border-t border-gray-200">
+      <div className="p-4 bg-white border-t">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -295,13 +306,13 @@ export function ChatWindow({
             }
           }}
           placeholder="Type a message..."
-          className="mb-2 resize-none bg-gray-50 border-gray-300 focus:border-primary focus:ring-primary"
+          className="mb-2 resize-none bg-gray-100 border-gray-300"
         />
         <div className="flex items-center justify-between">
           <Button
             onClick={handleFileButtonClick}
             variant="outline"
-            className="mr-2 bg-white hover:bg-gray-100 text-primary border-primary"
+            className="mr-2 bg-white hover:bg-gray-100"
           >
             <Icons.image className="mr-2 h-4 w-4" />
             {file ? "File selected" : "Attach file"}
@@ -309,7 +320,7 @@ export function ChatWindow({
           <Button
             onClick={handleSendMessage}
             disabled={sendMessageMutation.isPending}
-            className="bg-primary text-white hover:bg-primary-dark"
+            className="bg-black text-white hover:bg-gray-800"
           >
             {sendMessageMutation.isPending ? (
               <Icons.loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -320,12 +331,6 @@ export function ChatWindow({
           </Button>
         </div>
       </div>
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-      />
     </Card>
   );
 }
@@ -393,7 +398,7 @@ function MessageBubble({
           </a>
         );
       default:
-        return <p className="break-words">{message.content}</p>;
+        return <p>{message.content}</p>;
     }
   };
 
@@ -428,13 +433,11 @@ function MessageBubble({
     <div
       className={`flex ${
         isCurrentUserMessage ? "justify-end" : "justify-start"
-      } mb-4`}
+      }`}
     >
       <div
         className={`max-w-[70%] rounded-lg p-3 shadow-md ${
-          isCurrentUserMessage
-            ? "bg-primary text-white"
-            : "bg-white text-gray-800"
+          isCurrentUserMessage ? "bg-black text-white" : "bg-white text-black"
         }`}
       >
         <div className="flex items-center mb-1">
@@ -446,12 +449,7 @@ function MessageBubble({
             {message.sender.username}
           </span>
           {message.updatedAt !== message.timestamp && (
-            <Badge
-              variant="outline"
-              className={`ml-2 text-xs ${
-                isCurrentUserMessage ? "bg-primary-dark" : "bg-gray-200"
-              }`}
-            >
+            <Badge variant="outline" className="ml-2 text-xs">
               Edited
             </Badge>
           )}
@@ -459,9 +457,7 @@ function MessageBubble({
         {message.parent && (
           <div
             className={`text-xs italic mb-1 p-1 rounded ${
-              isCurrentUserMessage
-                ? "bg-primary-dark text-white"
-                : "bg-gray-100 text-gray-600"
+              isCurrentUserMessage ? "bg-gray-800" : "bg-gray-100"
             }`}
           >
             Replying to {message.parent.sender.username}:{" "}
@@ -474,15 +470,16 @@ function MessageBubble({
             <Textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="mb-2 bg-white text-gray-800"
+              className="mb-2"
             />
-            <Button onClick={handleEdit} size="sm" className="mr-2">
+            <Button onClick={handleEdit} size="sm">
               Save
             </Button>
             <Button
               onClick={() => setIsEditing(false)}
               size="sm"
               variant="outline"
+              className="ml-2"
             >
               Cancel
             </Button>
@@ -490,11 +487,7 @@ function MessageBubble({
         ) : (
           renderContent()
         )}
-        <div
-          className={`text-xs ${
-            isCurrentUserMessage ? "text-primary-light" : "text-gray-500"
-          } mt-1`}
-        >
+        <div className="text-xs text-gray-500 mt-1">
           {formatDistanceToNow(new Date(message.timestamp), {
             addSuffix: true,
           })}
@@ -525,10 +518,10 @@ function MessageBubble({
               <TooltipTrigger asChild>
                 <button
                   onClick={() => onReply(message)}
-                  className={`text-xs hover:bg-opacity-20 rounded px-1 ${
+                  className={`text-xs hover:bg-gray-300 rounded px-1 ${
                     isCurrentUserMessage
-                      ? "text-white hover:bg-white"
-                      : "text-gray-600 hover:bg-gray-200"
+                      ? "text-white hover:text-black"
+                      : "text-black"
                   }`}
                 >
                   <Icons.reply className="h-4 w-4" />
@@ -544,7 +537,7 @@ function MessageBubble({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="text-xs hover:bg-white hover:bg-opacity-20 rounded px-1 text-white"
+                      className="text-xs hover:bg-gray-300 rounded px-1 text-white hover:text-black"
                     >
                       <Icons.edit className="h-4 w-4" />
                     </button>
@@ -557,7 +550,7 @@ function MessageBubble({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => onDelete(message.id)}
-                      className="text-xs hover:bg-white hover:bg-opacity-20 rounded px-1 text-red-300"
+                      className="text-xs hover:bg-gray-300 rounded px-1 text-red-500"
                     >
                       <Icons.trash className="h-4 w-4" />
                     </button>

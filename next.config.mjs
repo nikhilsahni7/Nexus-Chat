@@ -3,8 +3,15 @@ const nextConfig = {
   // include cloudinray.com domain in images
 
   images: {
-    domains: ["res.cloudinary.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
   },
+
+  reactStrictMode: true,
 };
 
 export default nextConfig;

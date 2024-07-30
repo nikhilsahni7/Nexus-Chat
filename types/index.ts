@@ -40,6 +40,16 @@ export interface Message {
   reactions: MessageReaction[];
   parentId?: number;
   parent?: Message;
+  readBy: ReadReceipt[];
+}
+
+export interface ReadReceipt {
+  id: number;
+  messageId: number;
+  userId: number;
+  readAt: string;
+  message: Message;
+  user: User;
 }
 
 export interface MessageReaction {

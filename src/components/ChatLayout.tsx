@@ -1,6 +1,5 @@
 // components/ChatLayout.tsx
 "use client";
-// components/ChatLayout.tsx
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
@@ -105,15 +104,41 @@ export function ChatLayout() {
     }
   }, [token, queryClient, conversations]);
 
+  interface ConversationProps {
+    id: number;
+    name?: string;
+    isGroup: boolean;
+    lastMessage?: Message;
+    participants: any;
+    inviteCode?: string;
+    groupProfile?: string;
+  }
+
   return (
-    <div className="flex h-screen">
-      <div className="w-1/4 border-r">
+    <div className="flex h-screen bg-gray-100">
+      <div className="w-1/4 bg-white shadow-lg">
         <ConversationList conversations={conversations || []} />
       </div>
-      <div className="w-1/2">
-        <ChatWindow socket={socket} conversationId={conversationId} />
+      <div className="w-1/2 border-x border-gray-200">
+        {conversationId ? (
+          <ChatWindow
+            socket={socket}
+            conversationId={conversationId}
+            conversation={
+              conversations?.find(
+                (c) => c.id === parseInt(conversationId)
+              ) as Conversation
+            }
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-50">
+            <p className="text-gray-500 text-lg">
+              Select a conversation to start chatting
+            </p>
+          </div>
+        )}
       </div>
-      <div className="w-1/4 border-l">
+      <div className="w-1/4 bg-white shadow-lg">
         <OnlineUsers socket={socket} />
       </div>
     </div>

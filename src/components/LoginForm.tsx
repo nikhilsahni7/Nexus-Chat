@@ -24,7 +24,7 @@ export function LoginForm() {
     onSuccess: (data) => {
       setUser(data.data.user);
       setToken(data.data.accessToken);
-      router.push("/");
+      router.push("/chat");
     },
   });
 

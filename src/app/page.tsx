@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useIsAuthenticated, useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/ui/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +11,20 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
-  const router = useRouter();
-  const { user, token } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const isAuthenticated = useIsAuthenticated();
 
   useEffect(() => {
-    if (user && token) {
-      router.push("/");
+    if (isAuthenticated) {
+      console.log("Is authenticated:", isAuthenticated);
+      console.log("Current user:", useAuthStore.getState().user);
+      console.log("Current token:", useAuthStore.getState().token);
+      router.push("/chat");
     } else {
       setIsLoading(false);
     }
-  }, [user, token, router]);
-
+  }, [isAuthenticated, router, setIsLoading]);
   if (isLoading) {
     return <SkeletonLoader />;
   }

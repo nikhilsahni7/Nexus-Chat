@@ -26,6 +26,8 @@ import {
   Plus,
   Send,
   X,
+  Smile,
+  Check,
 } from "lucide-react";
 
 export const Icons = {
@@ -55,4 +57,6 @@ export const Icons = {
   plus: Plus,
   send: Send,
   x: X,
+  smile: Smile,
+  check: Check,
 };
