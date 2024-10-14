@@ -28,6 +28,10 @@ import {
   X,
   Smile,
   Check,
+  Calendar,
+  Activity,
+  Repeat,
+  Copy,
 } from "lucide-react";
 
 export const Icons = {
@@ -59,4 +63,8 @@ export const Icons = {
   x: X,
   smile: Smile,
   check: Check,
+  calendar: Calendar,
+  activity: Activity,
+  repeat: Repeat,
+  copy: Copy,
 };

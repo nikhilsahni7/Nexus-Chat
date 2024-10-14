@@ -49,7 +49,7 @@ export function OnlineUsers({ socket }: OnlineUsersProps) {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Online Users</h2>
+      <h2 className="text-lg font-semibold mb-4"> Users List</h2>
       <div className="space-y-4">
         {onlineUsers.map((user) => (
           <div key={user.id} className="flex items-center justify-between">

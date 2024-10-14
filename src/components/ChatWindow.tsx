@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/store/authStore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +28,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { ConversationSettings } from "./ConversationSettings";
+import Link from "next/link";
+import { useAuthStore } from "@/store/authStore";
 
 interface ChatWindowProps {
   socket: Socket | null;
@@ -43,7 +52,11 @@ export function ChatWindow({
   const [file, setFile] = useState<File | null>(null);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
+  const { logout } = useAuthStore();
 
   const { data: messages, isLoading } = useQuery<Message[]>({
     queryKey: ["messages", conversationId],
@@ -51,6 +64,11 @@ export function ChatWindow({
       api.get(`/messages/${conversationId}`).then((res) => res.data),
     enabled: !!conversationId,
   });
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   const sendMessageMutation = useMutation({
     mutationFn: async (newMessage: string) => {
@@ -123,14 +141,25 @@ export function ChatWindow({
         );
       });
 
-      socket.on(
-        "messagesRead",
-        ({ userId, conversationId: readConversationId }) => {
-          if (readConversationId === parseInt(conversationId)) {
-            queryClient.invalidateQueries(["messages", conversationId] as any);
+      socket.on("messageRead", ({ messageId, userId, username }) => {
+        queryClient.setQueryData(
+          ["messages", conversationId],
+          (oldMessages: Message[] | undefined) => {
+            if (!oldMessages) return oldMessages;
+            return oldMessages.map((msg) =>
+              msg.id === messageId
+                ? {
+                    ...msg,
+                    readBy: [
+                      ...msg.readBy.filter((rb) => rb.userId !== userId),
+                      { userId, user: { username } },
+                    ],
+                  }
+                : msg
+            );
           }
-        }
-      );
+        );
+      });
     }
 
     return () => {
@@ -171,6 +200,7 @@ export function ChatWindow({
       queryClient.invalidateQueries(["messages", conversationId] as any);
     });
   };
+
   const handleDeleteMessage = (messageId: number) => {
     api.delete(`/messages/${messageId}`).then(() => {
       queryClient.invalidateQueries(["messages", conversationId] as any);
@@ -201,6 +231,7 @@ export function ChatWindow({
   };
 
   const getChatName = () => {
+    if (!conversation) return "Chat";
     if (conversation.isGroup) {
       return conversation.name || "Group Chat";
     } else {
@@ -213,33 +244,75 @@ export function ChatWindow({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Icons.loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-lg overflow-hidden animate-pulse">
+        <div className="p-4 bg-gradient-to-r from-primary to-primary-dark">
+          <div className="h-8 w-48 bg-white/20 rounded"></div>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="flex items-center space-x-4">
+              <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <Card className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-lg overflow-hidden">
-      <div className="p-4 bg-gradient-to-r from-primary to-primary-dark text-white flex items-center justify-between">
+    <Card className="flex flex-col h-full bg-white shadow-xl rounded-lg overflow-hidden">
+      <div className="p-4 bg-gray-100 text-black flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {conversation.isGroup ? (
-            <Icons.users className="h-6 w-6" />
-          ) : (
-            <Icons.user className="h-6 w-6" />
+          {messages?.length === 0 && (
+            <p className="text-sm italic text-gray-600">
+              Start a new conversation
+            </p>
           )}
-          <h2 className="text-xl font-bold">{getChatName()}</h2>
+          {conversation?.isGroup ? (
+            <Icons.users className="h-6 w-6 text-gray-600" />
+          ) : (
+            <Icons.user className="h-6 w-6 text-gray-600" />
+          )}
+          <h2 className="text-xl font-bold text-gray-800">{getChatName()}</h2>
         </div>
-        <Button
-          onClick={() => {
-            router.push("/settings");
-          }}
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-primary-dark"
-        >
-          <Icons.settings className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center space-x-2">
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="p-1">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImage} alt={user?.username} />
+                  <AvatarFallback>
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="w-full">
+                  <Icons.user className="mr-2 h-4 w-4" />
+                  <span>View Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <Icons.logOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            onClick={() => setShowSettings(true)}
+            variant="ghost"
+            size="icon"
+            className="text-gray-600 hover:bg-gray-200"
+          >
+            <Icons.settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence>
@@ -304,7 +377,9 @@ export function ChatWindow({
             className="mr-2 bg-white hover:bg-gray-100 text-primary border-primary"
           >
             <Icons.image className="mr-2 h-4 w-4" />
-            {file ? "File selected" : "Attach file"}
+            <span className="hidden sm:inline">
+              {file ? "File selected" : "Attach file"}
+            </span>
           </Button>
           <Button
             onClick={handleSendMessage}
@@ -316,7 +391,7 @@ export function ChatWindow({
             ) : (
               <Icons.send className="mr-2 h-4 w-4" />
             )}
-            Send
+            <span className="hidden sm:inline">Send</span>
           </Button>
         </div>
       </div>
@@ -326,6 +401,14 @@ export function ChatWindow({
         className="hidden"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
       />
+      {user && (
+        <ConversationSettings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          conversation={conversation as Conversation}
+          currentUserId={user.id}
+        />
+      )}
     </Card>
   );
 }
@@ -367,7 +450,7 @@ function MessageBubble({
               alt="Shared image"
               width={200}
               height={200}
-              className="mt-2 rounded-lg cursor-pointer"
+              className="mt-2 rounded-lg cursor-pointer max-w-full h-auto"
             />
           </a>
         );
@@ -416,7 +499,7 @@ function MessageBubble({
       <div className="flex items-center mt-1">
         <Icons.check className="h-3 w-3 text-blue-500 mr-1" />
         <span className="text-xs text-gray-500">
-          Read by {readBy.map((rb) => rb.userId).join(", ")}
+          Read by {readBy.map((rb) => rb?.user?.username).join(", ")}
         </span>
       </div>
     );
@@ -431,7 +514,7 @@ function MessageBubble({
       } mb-4`}
     >
       <div
-        className={`max-w-[70%] rounded-lg p-3 shadow-md ${
+        className={`max-w-[90%] sm:max-w-[70%] rounded-lg p-3 shadow-md ${
           isCurrentUserMessage
             ? "bg-primary text-white"
             : "bg-white text-gray-800"
@@ -500,7 +583,7 @@ function MessageBubble({
           })}
         </div>
         {renderReadReceipts()}
-        <div className="flex mt-2 space-x-2">
+        <div className="flex mt-2 space-x-2 flex-wrap">
           <TooltipProvider>
             {["👍", "❤️", "😂", "😮", "😢", "😡"].map((reaction) => (
               <Tooltip key={reaction}>

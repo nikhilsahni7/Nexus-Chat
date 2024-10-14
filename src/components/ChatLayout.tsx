@@ -10,6 +10,11 @@ import { OnlineUsers } from "./OnlineUsers";
 import api from "@/lib/api";
 import { Conversation, Message } from "@/../types";
 import { useParams } from "next/navigation";
+import {
+  ChatBubbleLeftRightIcon,
+  UsersIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 export function ChatLayout() {
   const { token } = useAuthStore();
@@ -17,6 +22,8 @@ export function ChatLayout() {
   const queryClient = useQueryClient();
   const params = useParams();
   const conversationId = params?.conversationId as string;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUsersOpen, setIsUsersOpen] = useState(false);
 
   const { data: conversations } = useQuery<Conversation[]>({
     queryKey: ["conversations"],
@@ -114,12 +121,48 @@ export function ChatLayout() {
     groupProfile?: string;
   }
 
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleUsers = () => setIsUsersOpen(!isUsersOpen);
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <div className="w-1/4 bg-white shadow-lg">
+    <div className="flex flex-col h-screen bg-gray-100 md:flex-row">
+      {/* Mobile header */}
+      <div className="md:hidden flex justify-between items-center p-4 bg-white shadow-md">
+        <button
+          onClick={toggleMenu}
+          className="text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <ChatBubbleLeftRightIcon className="h-6 w-6" />
+        </button>
+        <h1 className="text-lg font-semibold text-gray-900">Nexus-Chat</h1>
+        <button
+          onClick={toggleUsers}
+          className="text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <UsersIcon className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Conversation List */}
+      <div
+        className={`w-full md:w-1/4 bg-white shadow-lg fixed inset-0 z-20 transform ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out md:relative md:translate-x-0`}
+      >
+        <div className="flex justify-between items-center p-4 border-b md:hidden">
+          <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+          <button
+            onClick={toggleMenu}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
         <ConversationList conversations={conversations || []} />
       </div>
-      <div className="w-1/2 border-x border-gray-200">
+
+      {/* Chat Window */}
+      <div className="w-full md:w-1/2 border-x border-gray-200 flex-grow overflow-hidden">
         {conversationId ? (
           <ChatWindow
             socket={socket}
@@ -138,7 +181,22 @@ export function ChatLayout() {
           </div>
         )}
       </div>
-      <div className="w-1/4 bg-white shadow-lg">
+
+      {/* Online Users */}
+      <div
+        className={`w-full md:w-1/4 bg-white shadow-lg fixed inset-0 z-20 transform ${
+          isUsersOpen ? "translate-x-0" : "translate-x-full"
+        } transition-transform duration-300 ease-in-out md:relative md:translate-x-0`}
+      >
+        <div className="flex justify-between items-center p-4 border-b md:hidden">
+          <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
+          <button
+            onClick={toggleUsers}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
         <OnlineUsers socket={socket} />
       </div>
     </div>

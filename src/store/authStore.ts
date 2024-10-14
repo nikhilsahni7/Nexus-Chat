@@ -1,4 +1,3 @@
-// src/store/authStore.ts
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { User } from "@/../types";
@@ -10,7 +9,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
   logout: () => void;
-  isAuthenticated: () => boolean;
+  isAuthenticated: boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,23 +18,18 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isLoading: false,
+      isAuthenticated: false,
       setUser: (user) => {
         console.log("Setting user:", user);
-        set({ user });
+        set({ user, isAuthenticated: !!user });
       },
-
       setToken: (token) => {
         console.log("Setting token:", token);
-        set({ token });
+        set({ token, isAuthenticated: !!token });
       },
       logout: () => {
-        set({ user: null, token: null });
-        // Clear the persisted state
+        set({ user: null, token: null, isAuthenticated: false });
         localStorage.removeItem("auth-storage");
-      },
-      isAuthenticated: () => {
-        const state = get();
-        return !!state.user && !!state.token;
       },
     }),
     {
@@ -49,5 +43,5 @@ export const useAuthStore = create<AuthState>()(
 export const useUser = () => useAuthStore((state) => state.user);
 export const useToken = () => useAuthStore((state) => state.token);
 export const useIsAuthenticated = () =>
-  useAuthStore((state) => state.isAuthenticated());
+  useAuthStore((state) => state.isAuthenticated);
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
