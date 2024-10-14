@@ -147,7 +147,7 @@ export function ChatLayout() {
       <div
         className={`w-full md:w-1/4 bg-white shadow-lg fixed inset-0 z-20 transform ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out md:relative md:translate-x-0`}
+        } transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col`}
       >
         <div className="flex justify-between items-center p-4 border-b md:hidden">
           <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
@@ -158,7 +158,9 @@ export function ChatLayout() {
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-        <ConversationList conversations={conversations || []} />
+        <div className="flex-grow overflow-y-auto">
+          <ConversationList conversations={conversations || []} />
+        </div>
       </div>
 
       {/* Chat Window */}
