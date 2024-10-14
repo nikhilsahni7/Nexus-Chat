@@ -532,7 +532,7 @@ function MessageBubble({
             <Badge
               variant="outline"
               className={`ml-2 text-xs ${
-                isCurrentUserMessage ? "bg-primary-dark" : "bg-gray-200"
+                isCurrentUserMessage ? "bg-gray-200" : "bg-gray-200"
               }`}
             >
               Edited
@@ -563,6 +563,7 @@ function MessageBubble({
               Save
             </Button>
             <Button
+              className="mr-2 text-black"
               onClick={() => setIsEditing(false)}
               size="sm"
               variant="outline"
