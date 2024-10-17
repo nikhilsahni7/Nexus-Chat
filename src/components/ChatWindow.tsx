@@ -75,7 +75,7 @@ export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
       conversation &&
       !conversation.participants.some((p) => p.userId === user?.id)
     ) {
-      router.push("/conversations");
+      router.push("/chat");
     }
   }, [conversation, user, router]);
 
