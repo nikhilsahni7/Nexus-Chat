@@ -166,15 +166,7 @@ export function ChatLayout() {
       {/* Chat Window */}
       <div className="w-full md:w-1/2 border-x border-gray-200 flex-grow overflow-hidden">
         {conversationId ? (
-          <ChatWindow
-            socket={socket}
-            conversationId={conversationId}
-            conversation={
-              conversations?.find(
-                (c) => c.id === parseInt(conversationId)
-              ) as Conversation
-            }
-          />
+          <ChatWindow socket={socket} conversationId={conversationId} />
         ) : (
           <div className="flex items-center justify-center h-full bg-gray-50">
             <p className="text-gray-500 text-lg">

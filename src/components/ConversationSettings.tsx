@@ -1,5 +1,5 @@
 // components/ConversationSettings.tsx
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
@@ -30,11 +30,12 @@ export function ConversationSettings({
 }: ConversationSettingsProps) {
   const [name, setName] = useState(conversation?.name || "");
   const [newParticipant, setNewParticipant] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const router = useRouter();
 
   const updateConversationMutation = useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: FormData) =>
       api.put(`/conversations/${conversation.id}/profile`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(["conversations"] as any);
@@ -72,12 +73,17 @@ export function ConversationSettings({
 
   const handleUpdateConversation = (e: React.FormEvent) => {
     e.preventDefault();
-    updateConversationMutation.mutate({ name });
+    const formData = new FormData();
+    formData.append("name", name);
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("groupProfile", fileInputRef.current.files[0]);
+    }
+    updateConversationMutation.mutate(formData);
   };
 
   const handleAddParticipant = (e: React.FormEvent) => {
     e.preventDefault();
-    addParticipantMutation.mutate({ participantId: Number(newParticipant) });
+    addParticipantMutation.mutate({ username: newParticipant });
   };
 
   const handleRemoveParticipant = (participantId: number) => {
@@ -107,11 +113,18 @@ export function ConversationSettings({
               onChange={(e) => setName(e.target.value)}
               required
             />
+            <Label htmlFor="group-profile">Group Profile Picture</Label>
+            <Input
+              id="group-profile"
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+            />
             <Button
               type="submit"
               disabled={updateConversationMutation.isPending}
             >
-              Update Name
+              Update Group Profile
             </Button>
           </form>
           <div>
@@ -130,14 +143,12 @@ export function ConversationSettings({
             </Button>
           </div>
           <form onSubmit={handleAddParticipant}>
-            <Label htmlFor="new-participant">
-              Add Participant (Enter user ID)
-            </Label>
+            <Label htmlFor="new-participant">Add Participant</Label>
             <Input
               id="new-participant"
               value={newParticipant}
               onChange={(e) => setNewParticipant(e.target.value)}
-              placeholder="Enter user ID"
+              placeholder="Enter username"
               required
             />
             <Button type="submit" disabled={addParticipantMutation.isPending}>

@@ -81,14 +81,14 @@ export function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
     } else {
       const formData = new FormData();
       formData.append("name", name);
-      formData.append("participantIds", participants);
+      formData.append("participantUsernames", participants);
+
       if (groupProfile) {
         formData.append("groupProfile", groupProfile);
       }
       createChatMutation.mutate(formData);
     }
   };
-
   const handleGroupProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -143,15 +143,16 @@ export function NewChatModal({ isOpen, onClose }: NewChatModalProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="participants">
-                  Participants (Enter user IDs)
+                  Participants (Enter usernames)
                 </Label>
                 <Input
                   id="participants"
                   value={participants}
                   onChange={(e) => setParticipants(e.target.value)}
-                  placeholder="Enter user IDs separated by commas"
+                  placeholder="Enter usernames separated by commas"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="group-profile">Group Profile Image</Label>
                 <Input

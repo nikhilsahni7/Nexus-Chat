@@ -35,14 +35,9 @@ import { useAuthStore } from "@/store/authStore";
 interface ChatWindowProps {
   socket: Socket | null;
   conversationId: string;
-  conversation: Conversation;
 }
 
-export function ChatWindow({
-  socket,
-  conversationId,
-  conversation,
-}: ChatWindowProps) {
+export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
   const { user } = useAuthStore();
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -58,12 +53,31 @@ export function ChatWindow({
   const router = useRouter();
   const { logout } = useAuthStore();
 
-  const { data: messages, isLoading } = useQuery<Message[]>({
+  const { data: conversation, isLoading: isConversationLoading } =
+    useQuery<Conversation>({
+      queryKey: ["conversation", conversationId],
+      queryFn: () =>
+        api.get(`/conversations/${conversationId}`).then((res) => res.data),
+      enabled: !!conversationId,
+    });
+
+  const { data: messages, isLoading: isMessagesLoading } = useQuery<Message[]>({
     queryKey: ["messages", conversationId],
     queryFn: () =>
       api.get(`/messages/${conversationId}`).then((res) => res.data),
-    enabled: !!conversationId,
+    enabled: !!conversationId && !!conversation,
   });
+
+  const isLoading = isConversationLoading || isMessagesLoading;
+
+  useEffect(() => {
+    if (
+      conversation &&
+      !conversation.participants.some((p) => p.userId === user?.id)
+    ) {
+      router.push("/conversations");
+    }
+  }, [conversation, user, router]);
 
   const handleLogout = () => {
     logout();
@@ -236,7 +250,7 @@ export function ChatWindow({
       return conversation.name || "Group Chat";
     } else {
       const otherParticipant = conversation.participants.find(
-        (p) => p.user.id !== user?.id
+        (p) => p.userId !== user?.id
       );
       return otherParticipant ? otherParticipant.user.username : "Chat";
     }
@@ -259,6 +273,22 @@ export function ChatWindow({
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (
+    !conversation ||
+    !conversation.participants.some((p) => p.userId === user?.id)
+  ) {
+    return (
+      <div className="flex flex-col h-full justify-center items-center">
+        <p className="text-xl font-semibold mb-4">
+          You don&apos;t have access to this conversation.
+        </p>
+        <Button onClick={() => router.push("/chat")}>
+          Go back to start or join a conversation
+        </Button>
       </div>
     );
   }
