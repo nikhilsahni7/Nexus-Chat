@@ -1,36 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
-import { Socket } from "socket.io-client";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Icons } from "@/components/ui/icons";
-import api from "@/lib/api";
-import { Message, User, Conversation } from "@/../types";
-import Image from "next/image";
+import { Conversation, Message, User } from "@/../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/ui/icons";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
+  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  TooltipContent,
 } from "@/components/ui/tooltip";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { ConversationSettings } from "./ConversationSettings";
-import Link from "next/link";
+import api from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
+import { formatDistanceToNow } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Socket } from "socket.io-client";
+import { ConversationSettings } from "./ConversationSettings";
 
 interface ChatWindowProps {
   socket: Socket | null;
@@ -258,15 +256,15 @@ export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-lg overflow-hidden animate-pulse">
-        <div className="p-4 bg-gradient-to-r from-primary to-primary-dark">
-          <div className="h-8 w-48 bg-white/20 rounded"></div>
+      <div className="flex flex-col h-full bg-gradient-chat animate-pulse">
+        <div className="p-6 bg-white shadow-sm border-b border-gray-100">
+          <div className="h-8 w-48 bg-gray-200 rounded-lg"></div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 p-6 space-y-6">
           {[...Array(5)].map((_, index) => (
-            <div key={index} className="flex items-center space-x-4">
+            <div key={index} className="flex items-start space-x-4">
               <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-3">
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -282,69 +280,108 @@ export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
     !conversation.participants.some((p) => p.userId === user?.id)
   ) {
     return (
-      <div className="flex flex-col h-full justify-center items-center">
-        <p className="text-xl font-semibold mb-4">
-          You don&apos;t have access to this conversation.
-        </p>
-        <Button onClick={() => router.push("/chat")}>
-          Go back to start or join a conversation
-        </Button>
+      <div className="flex flex-col h-full justify-center items-center bg-gradient-chat">
+        <div className="text-center">
+          <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
+            <Icons.x className="h-12 w-12 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Access Denied
+          </h2>
+          <p className="text-gray-600 mb-6 max-w-md">
+            You don&apos;t have access to this conversation.
+          </p>
+          <Button
+            onClick={() => router.push("/chat")}
+            className="bg-gradient-primary text-white hover:shadow-lg"
+          >
+            Go back to conversations
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <Card className="flex flex-col h-full bg-white shadow-xl rounded-lg overflow-hidden">
-      <div className="p-4 bg-gray-100 text-black flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {messages?.length === 0 && (
-            <p className="text-sm italic text-gray-600">
-              Start a new conversation
-            </p>
-          )}
-          {conversation?.isGroup ? (
-            <Icons.users className="h-6 w-6 text-gray-600" />
-          ) : (
-            <Icons.user className="h-6 w-6 text-gray-600" />
-          )}
-          <h2 className="text-xl font-bold text-gray-800">{getChatName()}</h2>
-        </div>
-        <div className="flex items-center space-x-2">
-          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="p-1">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.profileImage} alt={user?.username} />
-                  <AvatarFallback>
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="w-full">
-                  <Icons.user className="mr-2 h-4 w-4" />
-                  <span>View Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
-                <Icons.logOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            onClick={() => setShowSettings(true)}
-            variant="ghost"
-            size="icon"
-            className="text-gray-600 hover:bg-gray-200"
-          >
-            <Icons.settings className="h-5 w-5" />
-          </Button>
+    <div className="flex flex-col h-full bg-gradient-chat">
+      {/* Chat Header */}
+      <div className="p-4 bg-white shadow-sm border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
+              {conversation?.isGroup ? (
+                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                  <Icons.users className="h-4 w-4 text-white" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                  <Icons.user className="h-4 w-4 text-white" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {getChatName()}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {conversation?.isGroup ? "Group chat" : "Direct message"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <DropdownMenu
+              open={isDropdownOpen}
+              onOpenChange={setIsDropdownOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={user?.profileImage}
+                      alt={user?.username}
+                    />
+                    <AvatarFallback className="bg-gradient-primary text-white font-semibold">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-white border border-gray-100 shadow-lg rounded-xl"
+              >
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/profile" className="w-full">
+                    <Icons.user className="mr-2 h-4 w-4" />
+                    <span>View Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer"
+                >
+                  <Icons.logOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              onClick={() => setShowSettings(true)}
+              variant="ghost"
+              size="icon"
+              className="text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              <Icons.settings className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
         <AnimatePresence>
           {messages?.map((msg) => (
             <motion.div
@@ -368,69 +405,121 @@ export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
         </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Typing Indicator */}
       {typingUsers.length > 0 && (
-        <div className="px-4 py-2 text-sm text-gray-600 bg-gray-100 animate-pulse">
-          {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"}{" "}
-          typing...
+        <div className="px-4 py-2 text-sm text-gray-600 bg-gray-50 border-t border-gray-100">
+          <div className="flex items-center space-x-2">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+              <div
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.1s" }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              ></div>
+            </div>
+            <span>
+              {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"}{" "}
+              typing...
+            </span>
+          </div>
         </div>
       )}
+
+      {/* Reply Preview */}
       {replyingTo && (
-        <div className="px-4 py-2 bg-gray-200 flex justify-between items-center">
-          <span className="text-sm">
-            Replying to <strong>{replyingTo.sender.username}</strong>:{" "}
-            {replyingTo.content.substring(0, 50)}
-            {replyingTo.content.length > 50 ? "..." : ""}
-          </span>
-          <Button variant="ghost" size="sm" onClick={() => setReplyingTo(null)}>
-            <Icons.x className="h-4 w-4" />
-          </Button>
+        <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <p className="text-sm text-gray-600">
+                Replying to{" "}
+                <span className="font-semibold">
+                  {replyingTo.sender.username}
+                </span>
+              </p>
+              <p className="text-sm text-gray-500 truncate">
+                {replyingTo.content.substring(0, 50)}
+                {replyingTo.content.length > 50 ? "..." : ""}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyingTo(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Icons.x className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
-      <div className="p-4 bg-white border-t border-gray-200">
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={(e) => {
-            handleTyping();
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-          placeholder="Type a message..."
-          className="mb-2 resize-none bg-gray-50 border-gray-300 focus:border-primary focus:ring-primary"
-        />
-        <div className="flex items-center justify-between">
+
+      {/* Message Input */}
+      <div className="p-4 bg-white border-t border-gray-100">
+        <div className="flex items-end space-x-3">
           <Button
             onClick={handleFileButtonClick}
             variant="outline"
-            className="mr-2 bg-white hover:bg-gray-100 text-primary border-primary"
+            size="icon"
+            className="flex-shrink-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-200"
           >
-            <Icons.image className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">
-              {file ? "File selected" : "Attach file"}
-            </span>
+            <Icons.image className="h-5 w-5" />
           </Button>
+          <div className="flex-1">
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => {
+                handleTyping();
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Type a message..."
+              className="resize-none bg-gray-50 border-gray-200 focus:border-pink-500 focus:ring-pink-500 rounded-xl min-h-[44px] max-h-32"
+            />
+          </div>
           <Button
             onClick={handleSendMessage}
-            disabled={sendMessageMutation.isPending}
-            className="bg-primary text-white hover:bg-primary-dark"
+            disabled={
+              sendMessageMutation.isPending || (!message.trim() && !file)
+            }
+            className="flex-shrink-0 bg-gradient-primary text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sendMessageMutation.isPending ? (
-              <Icons.loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Icons.loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Icons.send className="mr-2 h-4 w-4" />
+              <Icons.send className="h-5 w-5" />
             )}
-            <span className="hidden sm:inline">Send</span>
           </Button>
         </div>
+        {file && (
+          <div className="mt-3 flex items-center space-x-2">
+            <Icons.file className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600">{file.name}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFile(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Icons.x className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
+
       <input
         type="file"
         ref={fileInputRef}
         className="hidden"
         onChange={(e) => setFile(e.target.files?.[0] || null)}
       />
+
       {user && (
         <ConversationSettings
           isOpen={showSettings}
@@ -439,7 +528,7 @@ export function ChatWindow({ socket, conversationId }: ChatWindowProps) {
           currentUserId={user.id}
         />
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -480,7 +569,7 @@ function MessageBubble({
               alt="Shared image"
               width={200}
               height={200}
-              className="mt-2 rounded-lg cursor-pointer max-w-full h-auto"
+              className="mt-1 rounded-lg cursor-pointer max-w-full h-auto shadow-sm"
             />
           </a>
         );
@@ -489,7 +578,7 @@ function MessageBubble({
           <video
             src={message.content}
             controls
-            className="mt-2 rounded-lg max-w-full"
+            className="mt-1 rounded-lg max-w-full shadow-sm"
             style={{ maxHeight: "300px" }}
           >
             Your browser does not support the video tag.
@@ -500,13 +589,13 @@ function MessageBubble({
           <a
             href={message.content}
             download
-            className="text-blue-500 hover:underline mt-2 block"
+            className="text-pink-600 hover:text-pink-700 hover:underline mt-1 block"
           >
             Download File
           </a>
         );
       default:
-        return <p className="break-words">{message.content}</p>;
+        return <p className="break-words leading-relaxed">{message.content}</p>;
     }
   };
 
@@ -527,8 +616,8 @@ function MessageBubble({
 
     return (
       <div className="flex items-center mt-1">
-        <Icons.check className="h-3 w-3 text-blue-500 mr-1" />
-        <span className="text-xs text-gray-500">
+        <Icons.check className="h-3 w-3 text-white mr-1" />
+        <span className="text-xs text-white/90">
           Read by {readBy.map((rb) => rb?.user?.username).join(", ")}
         </span>
       </div>
@@ -541,39 +630,20 @@ function MessageBubble({
     <div
       className={`flex ${
         isCurrentUserMessage ? "justify-end" : "justify-start"
-      } mb-4`}
+      } mb-2`}
     >
       <div
-        className={`max-w-[90%] sm:max-w-[70%] rounded-lg p-3 shadow-md ${
+        className={`max-w-[65%] rounded-2xl p-2.5 shadow-sm ${
           isCurrentUserMessage
-            ? "bg-primary text-white"
-            : "bg-white text-gray-800"
+            ? "bg-gradient-to-r from-pink-500 to-pink-600 text-white"
+            : "bg-white text-gray-900 border border-gray-200"
         }`}
       >
-        <div className="flex items-center mb-1">
-          <Avatar className="h-6 w-6 mr-2">
-            <AvatarImage src={message.sender.profileImage} />
-            <AvatarFallback>{message.sender.username[0]}</AvatarFallback>
-          </Avatar>
-          <span className="font-semibold text-sm">
-            {message.sender.username}
-          </span>
-          {message.updatedAt !== message.timestamp && (
-            <Badge
-              variant="outline"
-              className={`ml-2 text-xs ${
-                isCurrentUserMessage ? "bg-gray-200" : "bg-gray-200"
-              }`}
-            >
-              Edited
-            </Badge>
-          )}
-        </div>
         {message.parent && (
           <div
-            className={`text-xs italic mb-1 p-1 rounded ${
+            className={`text-xs italic mb-1.5 p-1.5 rounded-md ${
               isCurrentUserMessage
-                ? "bg-primary-dark text-white"
+                ? "bg-white/30 text-white"
                 : "bg-gray-100 text-gray-600"
             }`}
           >
@@ -582,49 +652,59 @@ function MessageBubble({
             {message.parent.content.length > 30 ? "..." : ""}
           </div>
         )}
+
         {isEditing ? (
           <div>
             <Textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="mb-2 bg-white text-gray-800"
+              className="mb-2 bg-white text-gray-800 border-gray-200 rounded-lg text-sm"
             />
-            <Button onClick={handleEdit} size="sm" className="mr-2">
-              Save
-            </Button>
-            <Button
-              className="mr-2 text-black"
-              onClick={() => setIsEditing(false)}
-              size="sm"
-              variant="outline"
-            >
-              Cancel
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleEdit}
+                size="sm"
+                className="bg-gradient-primary text-white text-xs"
+              >
+                Save
+              </Button>
+              <Button
+                onClick={() => setIsEditing(false)}
+                size="sm"
+                variant="outline"
+                className="border-gray-200 text-gray-700 text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         ) : (
           renderContent()
         )}
+
         <div
-          className={`text-xs ${
-            isCurrentUserMessage ? "text-primary-light" : "text-gray-500"
-          } mt-1`}
+          className={`text-xs mt-1 ${
+            isCurrentUserMessage ? "text-white/90" : "text-gray-500"
+          }`}
         >
           {formatDistanceToNow(new Date(message.timestamp), {
             addSuffix: true,
           })}
         </div>
+
         {renderReadReceipts()}
-        <div className="flex mt-2 space-x-2 flex-wrap">
+
+        <div className="flex mt-1.5 space-x-1 flex-wrap">
           <TooltipProvider>
             {["👍", "❤️", "😂", "😮", "😢", "😡"].map((reaction) => (
               <Tooltip key={reaction}>
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => onReaction(message.id, reaction)}
-                    className={`text-xs hover:bg-gray-300 rounded px-1 ${
+                    className={`text-xs hover:bg-opacity-20 rounded px-1 py-0.5 transition-colors ${
                       isCurrentUserMessage
-                        ? "text-white hover:text-black"
-                        : "text-black"
+                        ? "text-white hover:bg-white/20"
+                        : "text-gray-600 hover:bg-gray-200"
                     }`}
                   >
                     {reaction}
@@ -639,13 +719,13 @@ function MessageBubble({
               <TooltipTrigger asChild>
                 <button
                   onClick={() => onReply(message)}
-                  className={`text-xs hover:bg-opacity-20 rounded px-1 ${
+                  className={`text-xs hover:bg-opacity-20 rounded px-1 py-0.5 transition-colors ${
                     isCurrentUserMessage
-                      ? "text-white hover:bg-white"
+                      ? "text-white hover:bg-white/20"
                       : "text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  <Icons.reply className="h-4 w-4" />
+                  <Icons.reply className="h-3 w-3" />
                 </button>
               </TooltipTrigger>
               <TooltipContent>
@@ -658,9 +738,9 @@ function MessageBubble({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="text-xs hover:bg-white hover:bg-opacity-20 rounded px-1 text-white"
+                      className="text-xs hover:bg-white/20 rounded px-1 py-0.5 text-white transition-colors"
                     >
-                      <Icons.edit className="h-4 w-4" />
+                      <Icons.edit className="h-3 w-3" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -671,9 +751,9 @@ function MessageBubble({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => onDelete(message.id)}
-                      className="text-xs hover:bg-white hover:bg-opacity-20 rounded px-1 text-red-300"
+                      className="text-xs hover:bg-white/20 rounded px-1 py-0.5 text-red-200 transition-colors"
                     >
-                      <Icons.trash className="h-4 w-4" />
+                      <Icons.trash className="h-3 w-3" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -690,10 +770,10 @@ function MessageBubble({
             {message.reactions.map((reaction, index) => (
               <span
                 key={index}
-                className={`text-xs rounded px-1 mr-1 mt-1 ${
+                className={`text-xs rounded px-1 py-0.5 mr-1 mt-1 ${
                   isCurrentUserMessage
-                    ? "bg-gray-700 text-white"
-                    : "bg-gray-100 text-black"
+                    ? "bg-white/30 text-white"
+                    : "bg-gray-100 text-gray-700"
                 }`}
               >
                 {reaction.reaction} {reaction.user.username}
